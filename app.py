@@ -20,7 +20,7 @@ GOOGLE_SHEET_STMT = "Statement_DB"
 
 # <-- NEW: Store the HASH, not the password -->
 # Paste the hash you generated in Step 1 inside these quotes
-APP_PASSWORD_HASH = "98d60b268501a0d34d7d0248d8d68deb5644a7a801b1eaac8885d8d8c309624f" 
+APP_PASSWORD_HASH = "4237636bf1d23c41cc0ef5588dac379ff43a5e83a11e9d767cf3313870a20d5f" 
 
 # Initialize Session States
 if 'authenticated' not in st.session_state:

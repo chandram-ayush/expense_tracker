@@ -1,0 +1,26 @@
+name: Deploy Expense Tracker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # THIS IS THE MAGIC STEP
+      - name: Create credentials.json from Secret
+        env:
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS_JSON }}
+        run: |
+          echo "$GCP_CREDENTIALS" > credentials.json
+          
+      # Now you can run your Docker build, because credentials.json exists!
+      - name: Build Docker Image
+        run: docker build -t expense-tracker .
+        
+      # (Add your deployment steps here...)
