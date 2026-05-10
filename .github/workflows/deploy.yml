@@ -6,21 +6,29 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
 
-      # THIS IS THE MAGIC STEP
-      - name: Create credentials.json from Secret
-        env:
-          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS_JSON }}
-        run: |
-          echo "$GCP_CREDENTIALS" > credentials.json
-          
-      # Now you can run your Docker build, because credentials.json exists!
-      - name: Build Docker Image
-        run: docker build -t expense-tracker .
-        
-      # (Add your deployment steps here...)
+    steps:
+      - name: Deploy on Host Machine
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/expense-tracker
+
+            git pull origin main
+
+            echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > credentials.json
+
+            docker stop expense-tracker || true
+            docker rm expense-tracker || true
+
+            docker build -t expense-tracker .
+
+            docker run -d \
+              --name expense-tracker \
+              -p 8501:8501 \
+              expense-tracker
