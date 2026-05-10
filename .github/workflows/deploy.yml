@@ -7,23 +7,22 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    # Changed this to self-hosted so it runs on your actual server
+    runs-on: self-hosted
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # THIS IS THE MAGIC STEP
       - name: Create credentials.json from Secret
-        env:
-          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS_JSON }}
+        # Using a safer EOF method to prevent JSON formatting errors
         run: |
-          echo "$GCP_CREDENTIALS" > credentials.json
+          cat <<EOF > credentials.json
+          ${{ secrets.GCP_CREDENTIALS_JSON }}
+          EOF
           
-      # Now you can run your Docker build, because credentials.json exists!
       - name: Build Docker Image
         run: docker build -t expense-tracker .
         
-      # Stop and remove any existing container with the same name
       - name: Stop Old Container
         run: |
           docker stop expense-tracker || true
@@ -32,3 +31,5 @@ jobs:
       - name: Build and Start New Container
         run: docker run -d --name expense-tracker -p 8501:8501 expense-tracker
 
+      - name: Clean up unused Docker images
+        run: docker image prune -f
