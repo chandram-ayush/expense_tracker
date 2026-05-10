@@ -23,13 +23,14 @@ jobs:
       - name: Build Docker Image
         run: docker build -t expense-tracker .
         
-      # (Add your deployment steps here...)
+      # Stop and remove any existing container with the same name
       - name: Stop Old Container
-        # We ignore errors (|| true) in case the container doesn't exist yet
-        run: docker-compose down || true
+        run: |
+          docker stop expense-tracker || true
+          docker rm expense-tracker || true
 
       - name: Build and Start New Container
-        run: docker-compose up -d --build
+        run: docker run -d --name expense-tracker -p 8501:8501 expense-tracker
 
       - name: Clean up unused Docker images
         # Removes old build images to save space on your friend's server
