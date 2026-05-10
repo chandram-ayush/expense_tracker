@@ -6,29 +6,31 @@ on:
       - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Deploy on Host Machine
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /home/ubuntu/expense-tracker
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-            git pull origin main
+      # THIS IS THE MAGIC STEP
+      - name: Create credentials.json from Secret
+        env:
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS_JSON }}
+        run: |
+          echo "$GCP_CREDENTIALS" > credentials.json
+          
+      # Now you can run your Docker build, because credentials.json exists!
+      - name: Build Docker Image
+        run: docker build -t expense-tracker .
+        
+      # (Add your deployment steps here...)
+      - name: Stop Old Container
+        # We ignore errors (|| true) in case the container doesn't exist yet
+        run: docker-compose down || true
 
-            echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > credentials.json
+      - name: Build and Start New Container
+        run: docker-compose up -d --build
 
-            docker stop expense-tracker || true
-            docker rm expense-tracker || true
-
-            docker build -t expense-tracker .
-
-            docker run -d \
-              --name expense-tracker \
-              -p 8501:8501 \
-              expense-tracker
+      - name: Clean up unused Docker images
+        # Removes old build images to save space on your friend's server
+        run: docker image prune -f
